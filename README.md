@@ -24,3 +24,13 @@ ros2 run demo_nodes_py listener
 ~~~
 
 If you can read Chinese, [here](https://book.guyuehome.com/) is a good tutorial for ROS2.
+
+## Run this project
+~~~
+$ colcon build
+$ echo "source ~/perception-ros2/install/local_setup.sh" >> ~/.bashrc
+~~~
+- Install Gazebo:
+  ~~~
+  $ sudo apt install ros-humble-gazebo-*
+  ~~~
