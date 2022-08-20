@@ -102,7 +102,7 @@ def create_box(
     height: float,
     center: Optional[np.ndarray] = np.zeros(3),
     visualization: Optional[bool] = False
-):
+) -> np.ndarray:
     z_top = center[2] + height / 2
     z_bottom = center[2] - height / 2
     y_right = center[1] + width / 2
@@ -131,21 +131,63 @@ def create_box(
         ax = plt.figure().add_subplot(111, projection='3d')
         ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
         plt.gca().set_box_aspect((1, 1, 1))
+        plt.xlabel('x')
+        plt.ylabel('y')      
         plt.show()
 
     return point_list
 
 
-def create_stairs(num_steps: int, width: float, height: float):
+def create_stairs(
+    num_steps: int, 
+    length: float, 
+    width: float, 
+    height: float,
+    visualization: Optional[bool] = False
+) -> np.ndarray:
     '''
     Paras:
     - num_steps: number of steps of the stair
+    - length: length per steps
     - width: width per steps
     - height: height per steps
     '''
+    cur_height = 0
+    cur_length = 0
+    point_list_list = []
+    total_num_points = 0
+
+    for i_step in range(num_steps):
+        cur_vertical_pointlist = create_vertical_plane_xfixed(width/2, -width/2, cur_height+height, cur_height, cur_length)
+        point_list_list.append(cur_vertical_pointlist)
+        total_num_points += cur_vertical_pointlist.shape[0]
+        cur_height += height
+
+        cur_horizontal_pointlist = create_horizontal_plane(cur_length+length, cur_length, width/2, -width/2, cur_height)
+        point_list_list.append(cur_horizontal_pointlist)
+        total_num_points += cur_horizontal_pointlist.shape[0]
+        cur_length += length
+
+    point_list = np.zeros((total_num_points, 3))
+    pointer = 0
+    for list in point_list_list:
+        point_list[pointer:pointer+list.shape[0], :] = list
+        pointer += list.shape[0]
+
+    if visualization:
+        ax = plt.figure().add_subplot(111, projection='3d')
+        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
+        plt.gca().set_box_aspect((1, 1, 1))
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.show()
+
+    return point_list
+
 
 if __name__ == '__main__':
     # create_horizontal_plane(0.5, -0.5, -0.2, -0.4, 0.3, visualization=True)
     # create_vertical_plane_xfixed(0.5, -0.5, -0.2, -0.4, 0.3, visualization=True)
     # create_vertical_plane_yfixed(0.5, -0.5, -0.2, -0.4, 0.3, visualization=True)
-    point_list = create_box(1, 1, 0.5, visualization=True)
+    # point_list = create_box(1, 1, 0.5, visualization=True)
+    point_list = create_stairs(4, 0.3, 1, 0.25, visualization=True)
