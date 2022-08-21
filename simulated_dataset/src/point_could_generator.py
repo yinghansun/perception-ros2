@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Optional
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -236,9 +237,34 @@ def create_stairs(
     return point_list
 
 
+def add_noise_pointlist(
+    point_list: np.ndarray, 
+    std: float, 
+    visualization: Optional[bool] = False
+) -> np.ndarray:
+    num_data = point_list.shape[0]
+    noise = np.random.normal(0, std, num_data*3)
+    print(noise.shape)
+
+    for i in range(num_data):
+        point_list[i, 0] += noise[3*i]
+        point_list[i, 1] += noise[3*i+1]
+        point_list[i, 2] += noise[3*i+2]
+
+    if visualization:
+        ax = plt.figure().add_subplot(111, projection='3d')
+        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
+        plt.gca().set_box_aspect((1, 1, 1))
+        plt.xlabel('x')
+        plt.ylabel('y')      
+        plt.show()
+
+    return point_list 
+
 if __name__ == '__main__':
     # point_list = create_horizontal_plane(0.5, -0.5, -0.2, -0.4, 0.3, label=True, visualization=True)
     # point_list = create_vertical_plane_xfixed(0.5, -0.5, -0.2, -0.4, 0.3, label=True, visualization=True)
     # point_list = create_vertical_plane_yfixed(0.5, -0.5, -0.2, -0.4, 0.3, label=True, visualization=True)
     # point_list = create_box(1, 1, 0.5, label=True, visualization=True)
     point_list = create_stairs(4, 0.3, 1, 0.25, label=True, visualization=True)
+    point_list = add_noise_pointlist(point_list, 0.01, True)
