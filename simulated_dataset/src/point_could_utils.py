@@ -6,10 +6,10 @@ import numpy as np
 
 
 class PlaneLabel(Enum):
-    horizontal = 'horizontal', 1, 'red'
-    vertical = 'vertical', 2, 'blue'
-    sloping = 'sloping', 3, 'green'
-    others = 'others', 4, 'yellow'
+    horizontal = 'horizontal', 0, 'red'
+    vertical = 'vertical', 1, 'blue'
+    sloping = 'sloping', 2, 'green'
+    others = 'others', 3, 'yellow'
 
     def __init__(self, name: str, label: int, color: str) -> None:
         self.__name = name
