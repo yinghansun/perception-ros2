@@ -255,12 +255,11 @@ def rotate_pointlist(
         [1, 0, 0],
         [0, 0, 0]
     ])
-    R = np.eye(3) + np.sin(theta) * omega_hat + (1 - np.cos(theta)) * omega_hat * omega_hat
+    Rz = np.eye(3) + np.sin(theta) * omega_hat + (1 - np.cos(theta)) * omega_hat * omega_hat
 
     for point in point_list:
         coor = np.array([point[0], point[1], point[2]])
-        coor_trans = R @ coor
-        print(coor_trans)
+        coor_trans = Rz @ coor
         point[0:3] = coor_trans
 
     return point_list
