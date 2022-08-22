@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -58,10 +58,8 @@ def create_horizontal_plane(
             idx += 1
 
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2], c=PlaneLabel.horizontal.color)
-        plt.gca().set_box_aspect((num_points_x, num_points_y, (num_points_x + num_points_y) / 2))
-        plt.show()
+        scale = (num_points_x, num_points_y, (num_points_x + num_points_y) / 2)
+        visualize_pointlist(point_list, scale=scale)
 
     return point_list
 
@@ -95,10 +93,8 @@ def create_vertical_plane_xfixed(
             idx += 1
 
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2], c=PlaneLabel.vertical.color)
-        plt.gca().set_box_aspect(((num_points_y + num_points_z) / 2, num_points_y, num_points_z))
-        plt.show()
+        scale = ((num_points_y + num_points_z) / 2, num_points_y, num_points_z)
+        visualize_pointlist(point_list, scale=scale)
 
     return point_list
 
@@ -132,10 +128,8 @@ def create_vertical_plane_yfixed(
             idx += 1
 
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2], c=PlaneLabel.vertical.color)
-        plt.gca().set_box_aspect((num_points_x, (num_points_x + num_points_z) / 2, num_points_z))
-        plt.show()
+        scale = (num_points_x, (num_points_x + num_points_z) / 2, num_points_z)
+        visualize_pointlist(point_list, scale=scale)
 
     return point_list
 
@@ -176,12 +170,7 @@ def create_box(
         pointer += list.shape[0]
     
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
-        plt.gca().set_box_aspect((1, 1, 1))
-        plt.xlabel('x')
-        plt.ylabel('y')      
-        plt.show()
+        visualize_pointlist(point_list, scale=(1, 1, 1))
 
     return point_list
 
@@ -203,7 +192,7 @@ def create_stairs(
     '''
     cur_height = 0
     cur_length = 0
-    point_list_list = []
+    point_list_list: List[np.ndarray] = []
     total_num_points = 0
 
     for _ in range(num_steps):
@@ -227,12 +216,7 @@ def create_stairs(
         pointer += list.shape[0]
 
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
-        plt.gca().set_box_aspect((1, 1, 1))
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.show()
+        visualize_pointlist(point_list, scale=(1, 1, 1))
 
     return point_list
 
@@ -244,7 +228,6 @@ def add_noise_pointlist(
 ) -> np.ndarray:
     num_data = point_list.shape[0]
     noise = np.random.normal(0, std, num_data*3)
-    print(noise.shape)
 
     for i in range(num_data):
         point_list[i, 0] += noise[3*i]
@@ -252,14 +235,45 @@ def add_noise_pointlist(
         point_list[i, 2] += noise[3*i+2]
 
     if visualization:
-        ax = plt.figure().add_subplot(111, projection='3d')
-        ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
-        plt.gca().set_box_aspect((1, 1, 1))
-        plt.xlabel('x')
-        plt.ylabel('y')      
-        plt.show()
+        visualize_pointlist(point_list, scale=(1, 1, 1))
 
-    return point_list 
+    return point_list
+
+
+def rotate_pointlist(
+    point_list: np.ndarray,
+    theta: float
+) -> np.ndarray:
+    '''Rotate a point list about z-axis by a given angle theta
+
+    Paras:
+    - point_list: point list to be rotated
+    - theta: rotation angle about z-axis (in radius)
+    '''
+    omega_hat = np.array([
+        [0, -1, 0],
+        [1, 0, 0],
+        [0, 0, 0]
+    ])
+    R = np.eye(3) + np.sin(theta) * omega_hat + (1 - np.cos(theta)) * omega_hat * omega_hat
+
+    for point in point_list:
+        coor = np.array([point[0], point[1], point[2]])
+        coor_trans = R @ coor
+        print(coor_trans)
+        point[0:3] = coor_trans
+
+    return point_list
+
+
+def visualize_pointlist(point_list: np.ndarray, scale: Optional[tuple] = (1, 1, 1)) -> None:
+    ax = plt.figure().add_subplot(111, projection='3d')
+    ax.scatter(point_list[:, 0], point_list[:, 1], point_list[:, 2])
+    plt.gca().set_box_aspect(scale)
+    plt.xlabel('x')
+    plt.ylabel('y')      
+    plt.show()
+
 
 if __name__ == '__main__':
     # point_list = create_horizontal_plane(0.5, -0.5, -0.2, -0.4, 0.3, label=True, visualization=True)
@@ -267,4 +281,7 @@ if __name__ == '__main__':
     # point_list = create_vertical_plane_yfixed(0.5, -0.5, -0.2, -0.4, 0.3, label=True, visualization=True)
     # point_list = create_box(1, 1, 0.5, label=True, visualization=True)
     point_list = create_stairs(4, 0.3, 1, 0.25, label=True, visualization=True)
-    point_list = add_noise_pointlist(point_list, 0.01, True)
+    point_list = add_noise_pointlist(point_list, 0.01)
+    point_list = rotate_pointlist(point_list, np.pi / 2)
+    visualize_pointlist(point_list)
+
