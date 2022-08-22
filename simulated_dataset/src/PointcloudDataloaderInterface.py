@@ -10,7 +10,7 @@ class PointcloudDataset(Dataset):
     def __init__(
         self, 
         root_path: str, 
-        # num_classes: int,
+        num_classes: int,
         num_points: Optional[int] = 2048,
         block_size: Optional[float] = 1.0,
         sample_rate: Optional[float] = 0.5
@@ -28,7 +28,7 @@ class PointcloudDataset(Dataset):
         self.__labels_list: List[np.ndarray] = []
         self.__coor_min, self.__coor_max = [], []
         points_counter_list = []
-        # labelweights = np.zeros(num_classes)
+        labelcounter = np.zeros(num_classes)
 
         for data in data_list:
             points, labels = data[:, 0:3], data[:, 3]    # x, y, z, label
@@ -37,13 +37,20 @@ class PointcloudDataset(Dataset):
             points_counter_list.append(data.shape[0])
 
             # print(data.shape[0])
-            # tmp, _ = np.histogram(labels, range(1, num_classes+2))
+            tmp, _ = np.histogram(labels, range(1, num_classes+2))
+            labelcounter += tmp
             # print(tmp)
 
             coor_min = np.amin(points, axis=0)[:3]
             coor_max = np.amax(points, axis=0)[:3]
             self.__coor_min.append(coor_min)
             self.__coor_max.append(coor_max)
+
+        labelcounter = labelcounter.astype(np.float32)
+        labelweights = labelcounter / np.sum(labelcounter)
+        # print(labelweights)
+        self.labelweights = np.power(np.amax(labelweights) / labelweights, 1 / 3.0)
+        # print(self.labelweights)
 
         sample_prob = points_counter_list / np.sum(points_counter_list)
         num_iter = int(np.sum(points_counter_list) * sample_rate / num_points)
@@ -94,7 +101,7 @@ class PointcloudDataset(Dataset):
 def test():
     cur_path = os.path.dirname(os.path.abspath(__file__))
     data_root_path = cur_path + '/../data/'
-    dataset = PointcloudDataset(data_root_path)
+    dataset = PointcloudDataset(data_root_path, 2)
     print('point data size:', dataset.__len__())
     print('point data 0 shape:', dataset.__getitem__(0)[0].shape)
     print('point label 0 shape:', dataset.__getitem__(0)[1].shape)
@@ -107,7 +114,7 @@ def test():
     torch.cuda.manual_seed_all(manual_seed)
     def worker_init_fn(worker_id):
         random.seed(manual_seed + worker_id)
-    train_loader = torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True, num_workers=16, pin_memory=True, worker_init_fn=worker_init_fn)
+    train_loader = torch.utils.data.DataLoader(dataset, batch_size=16, shuffle=True, num_workers=10, pin_memory=True, worker_init_fn=worker_init_fn)
     for idx in range(4):
         end = time.time()
         for i, (input, target) in enumerate(train_loader):
