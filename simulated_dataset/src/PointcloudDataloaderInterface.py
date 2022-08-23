@@ -37,7 +37,7 @@ class PointcloudDataset(Dataset):
             points_counter_list.append(data.shape[0])
 
             # print(data.shape[0])
-            tmp, _ = np.histogram(labels, range(1, num_classes+2))
+            tmp, _ = np.histogram(labels, range(0, num_classes+1))
             labelcounter += tmp
             # print(tmp)
 
@@ -73,7 +73,7 @@ class PointcloudDataset(Dataset):
             block_min = center - [self.__block_size / 2., self.__block_size / 2., 0.]
             block_max = center + [self.__block_size / 2., self.__block_size / 2., 0.]
             point_idxs = np.where((points[:, 0] >= block_min[0]) & (points[:, 0] <= block_max[0]) & (points[:, 1] >= block_min[1]) & (points[:, 1] <= block_max[1]))[0]
-            if point_idxs.size > 1024:
+            if point_idxs.size > 512:
                 break
 
         if point_idxs.size >= self.__num_points:
@@ -87,9 +87,9 @@ class PointcloudDataset(Dataset):
         current_points[:, 6] = selected_points[:, 0] / self.__coor_max[data_idx][0]
         current_points[:, 7] = selected_points[:, 1] / self.__coor_max[data_idx][1]
         current_points[:, 8] = selected_points[:, 2] / self.__coor_max[data_idx][2]
-        current_points[:, 3] = np.ones((self.__num_points, ))
-        current_points[:, 4] = np.ones((self.__num_points, ))
-        current_points[:, 5] = np.ones((self.__num_points, ))
+        current_points[:, 3] = np.zeros((self.__num_points, ))
+        current_points[:, 4] = np.zeros((self.__num_points, ))
+        current_points[:, 5] = np.zeros((self.__num_points, ))
         selected_points[:, 0] = selected_points[:, 0] - center[0]
         selected_points[:, 1] = selected_points[:, 1] - center[1]
         current_points[:, 0:3] = selected_points
@@ -99,6 +99,10 @@ class PointcloudDataset(Dataset):
 
     def __len__(self):
         return len(self.__subpointcloud_idxs)
+
+    @property
+    def num_points(self):
+        return self.__num_points
 
 
 def test():
