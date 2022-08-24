@@ -11,11 +11,14 @@ class PointcloudDataset(Dataset):
         self, 
         root_path: str, 
         num_classes: int,
+        usage: str,
         num_points: Optional[int] = 2048,
         block_size: Optional[float] = 1.0,
         sample_rate: Optional[float] = 0.5
     ) -> None:
         super().__init__()
+
+        assert usage in root_path
 
         self.__num_points = num_points
         self.__block_size = block_size
@@ -107,8 +110,8 @@ class PointcloudDataset(Dataset):
 
 def test():
     cur_path = os.path.dirname(os.path.abspath(__file__))
-    data_root_path = cur_path + '/../data/'
-    dataset = PointcloudDataset(data_root_path, 2)
+    data_root_path = cur_path + '/../data/train/'
+    dataset = PointcloudDataset(data_root_path, 2, 'train')
     print('point data size:', dataset.__len__())
     print('point data 0 shape:', dataset.__getitem__(0)[0].shape)
     print('point label 0 shape:', dataset.__getitem__(0)[1].shape)

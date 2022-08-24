@@ -5,3 +5,7 @@
 
 # simulated data
 /simulated_dataset/data
+/simulated_dataset/src/__pycache__
+
+# vscode
+/.vscode

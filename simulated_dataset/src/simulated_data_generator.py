@@ -4,10 +4,13 @@ import numpy as np
 from point_could_utils import *
 
 cur_path = os.path.dirname(os.path.abspath(__file__))
-data_root_path = cur_path + '/../data/'
+data_root_path = cur_path + '/../data/test/'
 
-stair1 = create_stairs(num_steps=4, length=0.3, width=1, height=0.25, label=True)
-np.save(data_root_path + 'stair1.npy', stair1)
+stair1 = create_stairs(num_steps=7, length=0.128, width=1.2, height=0.125, label=True)
+# np.save(data_root_path + 'stair1.npy', stair1)
+
+stair2 = create_stairs(num_steps=5, length=0.225, width=1.3, height=0.2, label=True)
+# np.save(data_root_path + 'stair2.npy', stair2)
 
 
 for i in range(10):
@@ -35,7 +38,7 @@ for i in range(10):
     angle = np.random.rand() * 3.1415926
     box_i = rotate_pointlist(box_i, angle)
     box_i = add_noise_pointlist(box_i, 0.005)
-    # visualize_pointlist(box_i)
-    np.save(data_root_path + name, box_i)
+    visualize_pointlist(box_i)
+    # np.save(data_root_path + name, box_i)
 
 # print(np.random.rand())

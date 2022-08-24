@@ -34,3 +34,8 @@ $ echo "source ~/perception-ros2/install/local_setup.sh" >> ~/.bashrc
   ~~~
   $ sudo apt install ros-humble-gazebo-*
   ~~~
+
+- Install xacro:
+  ~~~
+  $ sudo apt install ros-humble-xacro
+  ~~~

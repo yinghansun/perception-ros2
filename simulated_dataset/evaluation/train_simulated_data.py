@@ -50,8 +50,10 @@ def weights_init(m):
 
 def main():
     cur_path = os.path.dirname(os.path.abspath(__file__))
-    data_root_path = cur_path + '/../data/'
-    train_set = PointcloudDataset(data_root_path, 2)
+    train_root_path = cur_path + '/../data/train/'
+    train_set = PointcloudDataset(train_root_path, 2, 'train')
+    test_root_path = cur_path + '/../data/test/'
+    test_set = PointcloudDataset(test_root_path, 2, 'test')
 
     train_data_loader = torch.utils.data.DataLoader(
         train_set,
@@ -63,6 +65,15 @@ def main():
         worker_init_fn=lambda x: np.random.seed(x + int(time.time()))
     )
     
+    test_data_loader = torch.utils.data.DataLoader(
+        test_set, 
+        batch_size=BATCH_SIZE, 
+        shuffle=False, 
+        num_workers=10,
+        pin_memory=True, 
+        drop_last=True
+    )
+
     label_weights = torch.Tensor(train_set.labelweights).to(DEVICE)
 
 
@@ -77,6 +88,11 @@ def main():
         eps=1e-08,
         weight_decay=DECAY_RATE
     )
+
+    train_loss_list = []
+    train_acc_list = []
+    test_loss_list = []
+    test_acc_list = []
 
     for epoch in range(NUM_EPOCH):
         lr = max(LEARNING_RATE * (LEARNING_RATE_DECAY ** (epoch // MOMENTUM_DECCAY_STEP)), LEARNING_RATE_CLIP)
@@ -119,9 +135,61 @@ def main():
             total_seen += (BATCH_SIZE * train_set.num_points)
             loss_sum += loss
 
+            train_loss_list.append(loss_sum / num_batches)
+            train_acc_list.append(total_correct / float(total_seen))
+
             print('Training mean loss: %f' % (loss_sum / num_batches))
             print('Training accuracy: %f' % (total_correct / float(total_seen)))
 
+        with torch.no_grad():
+            num_batches = len(test_data_loader)
+            total_correct = 0
+            total_seen = 0
+            loss_sum = 0
+            labelweights = np.zeros(NUM_CLASSES)
+            total_seen_class = [0 for _ in range(NUM_CLASSES)]
+            total_correct_class = [0 for _ in range(NUM_CLASSES)]
+            total_iou_deno_class = [0 for _ in range(NUM_CLASSES)]
+            classifier = classifier.eval()
+
+            for i, (points, labels) in enumerate(test_data_loader):
+                points = points.float().to(DEVICE)
+                labels = labels.long().to(DEVICE)
+                points = points.transpose(2, 1)
+
+                seg_pred, trans_feat = classifier(points)
+                pred_val = seg_pred.contiguous().cpu().data.numpy()
+                seg_pred = seg_pred.contiguous().view(-1, NUM_CLASSES)
+
+                batch_label = labels.cpu().data.numpy()
+                labels = labels.view(-1, 1)[:, 0]
+                loss = criterion(seg_pred, labels, trans_feat, label_weights)
+                loss_sum += loss
+                pred_val = np.argmax(pred_val, 2)
+                correct = np.sum((pred_val == batch_label))
+                total_correct += correct
+                total_seen += (BATCH_SIZE * train_set.num_points)
+                tmp, _ = np.histogram(batch_label, range(NUM_CLASSES + 1))
+                labelweights += tmp
+
+                for l in range(NUM_CLASSES):
+                    total_seen_class[l] += np.sum((batch_label == l))
+                    total_correct_class[l] += np.sum((pred_val == l) & (batch_label == l))
+                    total_iou_deno_class[l] += np.sum(((pred_val == l) | (batch_label == l)))
+
+            labelweights = labelweights.astype(np.float32) / np.sum(labelweights.astype(np.float32))
+            mIoU = np.mean(np.array(total_correct_class) / (np.array(total_iou_deno_class, dtype=np.float) + 1e-6))
+
+            test_loss_list.append(loss_sum / float(num_batches))
+            test_acc_list.append(total_correct / float(total_seen))
+
+            print('eval mean loss: %f' % (loss_sum / float(num_batches)))
+            print('eval point avg class IoU: %f' % (mIoU))
+            print('eval point accuracy: %f' % (total_correct / float(total_seen)))
+            print('eval point avg class acc: %f' % (
+                np.mean(np.array(total_correct_class) / (np.array(total_seen_class, dtype=np.float) + 1e-6))))
+
+    
 
 
 if __name__ == '__main__':
